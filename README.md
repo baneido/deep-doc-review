@@ -11,8 +11,6 @@ It follows the approach of Google Research's [Deep Review](https://research.goog
 - Output: `report.md` (Japanese by default) and `findings.json` (machine-readable)
 - Not intended for code review or copy editing
 
-This repository is both the plugin and its marketplace: marketplace `deep-doc-review`, plugin `deep-review`.
-
 ## Installation
 
 > **Private repository:** you need read access to `baneido/deep-doc-review` on GitHub, and git on your machine must already be able to clone it without a prompt (for example `gh auth login` followed by `gh auth setup-git`, or an SSH key registered with GitHub). Neither CLI asks for a password.
@@ -34,7 +32,7 @@ claude plugin marketplace add baneido/deep-doc-review
 claude plugin install deep-review@deep-doc-review      # user scope; add --scope project to share via .claude/settings.json
 ```
 
-Check it with `claude plugin list` or `claude plugin details deep-review@deep-doc-review` (it should list skill `deep-review` and agent `reviewer`).
+Check it with `claude plugin list` or `claude plugin details deep-review@deep-doc-review`.
 
 ### Codex CLI
 
@@ -48,8 +46,6 @@ In the TUI you can also open `/plugins`, choose the `deep-doc-review` marketplac
 
 ## Update
 
-The plugin is versioned (`version` in `.claude-plugin/plugin.json` and `.codex-plugin/plugin.json`), so an update is picked up when a new version is published.
-
 ```bash
 # Claude Code
 claude plugin marketplace update deep-doc-review
@@ -58,8 +54,6 @@ claude plugin update deep-review@deep-doc-review       # or /plugin → Installe
 # Codex CLI
 codex plugin marketplace upgrade deep-doc-review       # refreshes the marketplace and the installed plugin
 ```
-
-Maintainers: bump `version` in **both** manifest files for every release; otherwise installed copies are not refreshed.
 
 ## Uninstall
 
@@ -86,7 +80,6 @@ Plugin skills are namespaced, so the command is `/deep-review:deep-review`:
 ```
 
 You can also skip the slash command and just ask, e.g. "Deep-review this design doc: docs/design.md".
-The reviewers run as the bundled `deep-review:reviewer` subagent.
 Non-interactive example:
 
 ```bash
@@ -105,7 +98,6 @@ $deep-review:deep-review docs/proposal.md depth=thorough — verify each segment
 
 You can also pick it from `/skills` or just ask. Non-interactive example: `codex exec --sandbox workspace-write '$deep-review:deep-review docs/design.md'`
 (workspace-write or higher is required because the skill writes result files).
-Codex plugins cannot ship custom agent definitions, so Codex uses its default subagent; every reviewer prompt carries the full reviewer rules.
 
 ### Options (free-form)
 
@@ -118,7 +110,7 @@ Codex plugins cannot ship custom agent definitions, so Codex uses its default su
 
 Results are written to `.deep-review/<doc>-<timestamp>/` in the working directory (`report.md`, `findings.json` and intermediate files). The original document is never modified.
 
-## Pipeline
+## How it works
 
 1. **Preparation (Stage 0)**: Convert the document to text and create a line-numbered copy in `L0001| …` format. Very long documents get a narrower scope.
 2. **Segmentation (Stage 1)**: Split into 4–12 meaningful segments (tables stay with the text that interprets them) and check that every line is covered.
@@ -130,40 +122,3 @@ Results are written to `.deep-review/<doc>-<timestamp>/` in the working director
 5. **Global synthesis (Stage 4)**: Merge findings → cross-section consistency check (dedicated subagent) → dedupe by root cause →
    **independent re-verification** of critical/major findings by a subagent that did not write them (confirmed / rejected / uncertain) →
    (optional) web fact-checking → write `findings.json` and `report.md`.
-
-## Repository layout
-
-```
-.
-├── .claude-plugin/
-│   ├── plugin.json                    # Claude Code plugin manifest (Codex falls back to it too)
-│   └── marketplace.json               # Marketplace "deep-doc-review" (read by Claude Code and Codex)
-├── .codex-plugin/plugin.json          # Codex plugin manifest (adds Codex UI metadata)
-├── .agents/plugins/marketplace.json   # Codex-native marketplace file (install policy, category)
-├── agents/reviewer.md                 # Claude Code subagent → deep-review:reviewer
-├── skills/deep-review/                # The skill (shared by both platforms)
-│   ├── SKILL.md                       # Orchestration procedure (Stages 0–4)
-│   ├── agents/openai.yaml             # Codex skill UI metadata (ignored by Claude Code)
-│   ├── references/                    # Prompts, findings schema, report template, platform notes
-│   └── scripts/                       # Optional helpers (Python 3 standard library only)
-└── tests/                             # Synthetic document with planted errors, answer key, scorer
-```
-
-## Testing
-
-`tests/planted_design_doc.md` is a synthetic design document with 6 planted errors (plus 1 bonus), and `tests/planted_errors.json` is the answer key.
-It also contains correct calculations, so you can check for false positives. With the plugin installed, from a clone of this repository:
-
-```bash
-cd tests
-claude -p "/deep-review:deep-review planted_design_doc.md" --permission-mode acceptEdits \
-  --allowedTools "Read,Write,Edit,Glob,Grep,Agent,Bash(python3:*),Bash(mkdir:*),Bash(date:*)"
-python3 score.py .deep-review/planted_design_doc-*/findings.json
-```
-
-Plugin authors can check the manifests with `claude plugin validate .`.
-
-## Notes
-
-- The helper scripts are optional. SKILL.md describes how the agent can do the same work by hand where Python isn't available.
-- If you want batch runs over external APIs, mixed models or cost tracking, you can use a separate standalone Python tool instead (this plugin defaults to agent-native execution).

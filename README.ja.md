@@ -11,8 +11,6 @@ Google Research の [Deep Review](https://research.google/blog/analyzing-technic
 - 出力: `report.md`（既定は日本語）と `findings.json`（機械可読）
 - コードレビューや文体の添削用ではありません
 
-このリポジトリはプラグイン本体であり、同時にマーケットプレイスでもあります（マーケットプレイス名 `deep-doc-review`、プラグイン名 `deep-review`）。
-
 ## インストール
 
 > **非公開リポジトリです。** GitHub の `baneido/deep-doc-review` への読み取り権限が必要です。また、手元の git がパスワード入力なしでこのリポジトリを clone できる状態にしておいてください（例: `gh auth login` のあと `gh auth setup-git`、または GitHub に登録済みの SSH 鍵）。どちらの CLI もパスワードを尋ねません。
@@ -34,7 +32,7 @@ claude plugin marketplace add baneido/deep-doc-review
 claude plugin install deep-review@deep-doc-review      # 既定はユーザースコープ。--scope project で .claude/settings.json 経由の共有
 ```
 
-`claude plugin list` または `claude plugin details deep-review@deep-doc-review` で確認できます（スキル `deep-review` とエージェント `reviewer` が表示されます）。
+`claude plugin list` または `claude plugin details deep-review@deep-doc-review` で確認できます。
 
 ### Codex CLI
 
@@ -48,8 +46,6 @@ TUI の `/plugins` から `deep-doc-review` マーケットプレイスを選び
 
 ## 更新
 
-プラグインにはバージョン（`.claude-plugin/plugin.json` と `.codex-plugin/plugin.json` の `version`）が付いており、新しいバージョンが公開されると更新できます。
-
 ```bash
 # Claude Code
 claude plugin marketplace update deep-doc-review
@@ -58,8 +54,6 @@ claude plugin update deep-review@deep-doc-review       # または /plugin → I
 # Codex CLI
 codex plugin marketplace upgrade deep-doc-review       # マーケットプレイスとインストール済みプラグインを更新
 ```
-
-メンテナー向け: リリースのたびに **両方の** マニフェストの `version` を上げてください。上げないと、インストール済みのコピーは更新されません。
 
 ## アンインストール
 
@@ -86,7 +80,6 @@ codex plugin marketplace remove deep-doc-review        # 任意
 ```
 
 スラッシュコマンドを使わず「この設計書をディープレビューして: docs/design.md」と頼んでも起動します。
-レビュアーは同梱のサブエージェント `deep-review:reviewer` として動きます。
 非対話で実行する例:
 
 ```bash
@@ -105,7 +98,6 @@ $deep-review:deep-review docs/proposal.md depth=thorough でレビューして�
 
 `/skills` から選ぶか、普通に頼んでも起動します。非対話の例: `codex exec --sandbox workspace-write '$deep-review:deep-review docs/design.md'`
 （結果ファイルを書くため workspace-write 以上が必要です）。
-Codex のプラグインはカスタムエージェント定義を配布できないため、Codex では既定のサブエージェントを使います。レビュアー用プロンプトにはレビューのルールがすべて含まれています。
 
 ### オプション（自由記述で指定）
 
@@ -118,7 +110,7 @@ Codex のプラグインはカスタムエージェント定義を配布でき�
 
 結果は作業ディレクトリの `.deep-review/<文書名>-<日時>/` に出力されます（`report.md`, `findings.json`, 中間ファイル）。元の文書は変更しません。
 
-## パイプライン
+## 仕組み
 
 1. **準備（Stage 0）**: 文書をテキスト化し `L0001| …` 形式の行番号付きファイルを作成。非常に長い文書は範囲を絞る。
 2. **分割（Stage 1）**: 意味のまとまりで 4〜12 区間に分割（表は解釈する本文と同じ区間に）。全行の網羅をチェック。
@@ -130,40 +122,3 @@ Codex のプラグインはカスタムエージェント定義を配布でき�
 5. **全体統合（Stage 4）**: 指摘の統合 → 章をまたぐ矛盾の横断チェック（専用サブエージェント）→ 根本原因ごとの重複排除 →
    critical / major の指摘を **書いていないサブエージェントが独立に再検証**（confirmed / rejected / uncertain）→
    （任意）Web による裏取り → `findings.json` と `report.md` を出力。
-
-## リポジトリ構成
-
-```
-.
-├── .claude-plugin/
-│   ├── plugin.json                    # Claude Code 用プラグインマニフェスト（Codex もフォールバックで読む）
-│   └── marketplace.json               # マーケットプレイス "deep-doc-review"（Claude Code・Codex 共通）
-├── .codex-plugin/plugin.json          # Codex 用プラグインマニフェスト（Codex の UI 情報を追加）
-├── .agents/plugins/marketplace.json   # Codex ネイティブのマーケットプレイス定義（インストールポリシー・カテゴリ）
-├── agents/reviewer.md                 # Claude Code 用サブエージェント → deep-review:reviewer
-├── skills/deep-review/                # スキル本体（両プラットフォーム共通）
-│   ├── SKILL.md                       # オーケストレーション手順（Stage 0–4）
-│   ├── agents/openai.yaml             # Codex 用スキル UI メタデータ（Claude Code は無視）
-│   ├── references/                    # プロンプト、指摘スキーマ、レポートひな形、プラットフォーム差分
-│   └── scripts/                       # 任意の補助スクリプト（Python 3 標準ライブラリのみ）
-└── tests/                             # 誤りを仕込んだ合成文書と正解キー、採点スクリプト
-```
-
-## テスト
-
-`tests/planted_design_doc.md` は誤りを 6 件（＋ボーナス 1 件）仕込んだ合成設計書、`tests/planted_errors.json` が正解キーです。
-正しい計算も含まれており、誤検出しないかも確認できます。プラグインをインストールした状態で、このリポジトリの clone から実行します。
-
-```bash
-cd tests
-claude -p "/deep-review:deep-review planted_design_doc.md" --permission-mode acceptEdits \
-  --allowedTools "Read,Write,Edit,Glob,Grep,Agent,Bash(python3:*),Bash(mkdir:*),Bash(date:*)"
-python3 score.py .deep-review/planted_design_doc-*/findings.json
-```
-
-プラグインの開発者は `claude plugin validate .` でマニフェストを検証できます。
-
-## 補足
-
-- 補助スクリプトは任意です。Python が無い環境でも、エージェントが同じ処理を手作業で行えるよう SKILL.md に記述しています。
-- 外部 API でバッチ実行・モデル混在・コスト計測をしたい場合は、別途スタンドアロンの Python 版ツールを使う運用も可能です（本プラグインの既定はエージェントネイティブ実行）。
