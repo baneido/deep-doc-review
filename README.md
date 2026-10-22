@@ -69,7 +69,7 @@ Add options after the file name in plain words, for example `/deep-doc-review:de
 | `lang` | Language of the report: `ja` (Japanese), `en` (English) or `auto` (same as the document) | `ja` |
 | `depth` | How thorough the review is: `quick`, `standard` or `thorough`. Deeper reviews take longer | `standard` |
 | `focus` | Parts or aspects to concentrate on, for example `focus="numbers in chapters 3-5"` | none |
-| `web` | `on` checks facts such as standards, prices and laws with a web search. Only short search phrases are sent, never your document | off |
+| `web` | Checks facts such as standards, prices and laws with a web search. Only short search phrases are sent, never your document. Use `web=off` to turn it off | `on` |
 
 Note that the report is written in Japanese unless you add `lang=en` or `lang=auto`.
 

@@ -18,8 +18,8 @@ Inputs from the user (ask nothing unless the document path is missing):
 - `DOC` — the document path (arguments: `$ARGUMENTS`). Required.
 - Options in free text: `lang=ja|en|auto` (report language, default **ja**; `auto` = document language),
   `depth=quick|standard|thorough` (default standard), `focus=...` (e.g. "numbers only", "sections 3–5"),
-  `web=on` (fact grounding via your own web search; **off by default** — never send document content to
-  the web unless the user explicitly asked).
+  `web=on|off` (fact grounding via your own web search; **on by default**, `web=off` disables it). Only ever send
+  short, non-confidential search phrases — never paste document content into a search or any web request.
 
 Reference files (read them when the stage needs them, not all up front):
 - `references/prompts.md` — exact subagent prompts for every stage (copy them, fill the placeholders).
@@ -107,9 +107,10 @@ For every job spawn one **fresh reviewer subagent** with the "Stage 3 reviewer" 
    recomputes numbers, and returns `confirmed | rejected | uncertain` + corrected severity + note
    (`RUN/verdicts_<k>.json`). Rejected findings stay in findings.json with `"verdict":"rejected"` but are excluded
    from the main report body. Minor/info findings keep `"verdict":"unverified"` unless verified.
-5. **Optional grounding (`web=on` only).** For confirmed findings that hinge on external facts (standards, prices,
-   laws, published numbers), verify with your own web search using only short, non-confidential search phrases; add
-   `grounding` notes with URLs. Otherwise skip and write "外部情報による裏取り: 未実施".
+5. **Grounding (default; skip only if `web=off`).** For confirmed findings that hinge on external facts (standards,
+   prices, laws, published numbers), verify with your own web search using only short, non-confidential search
+   phrases; add `grounding` notes with URLs, and downgrade or reject a finding the sources contradict. If `web=off`
+   or no web search tool is available, skip and write "外部情報による裏取り: 未実施（理由）" in the report.
 6. **Finalize.** Write `RUN/summary.json` yourself from the non-rejected findings: `{"overall_assessment":"3–6
    sentences","top_priorities":["F1: …"],"strengths":["…"],"verdict":"accept|minor_revision|major_revision|reject"}`.
    Then `python3 SKILL_DIR/scripts/finalize.py RUN` applies verdicts, sorts (severity, then line), and writes
