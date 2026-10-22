@@ -33,8 +33,6 @@ Run these in a Claude Code session:
 /reload-plugins
 ```
 
-The first line registers this repository as a plugin source, the second installs the plugin, and the third loads it into the current session.
-
 ### Codex CLI
 
 Run these in your terminal, then start a new Codex session:
@@ -89,39 +87,3 @@ Results are saved in a new folder in your working directory, `.deep-doc-review/<
 3. **Plan**: each section is rated by how difficult and important it is. Harder sections get more reviewers, each looking from a different angle: a general review, a recheck of every number, and a skeptical expert.
 4. **Review**: the reviewers work in parallel. Each one reads the whole document but concentrates on its own section.
 5. **Combine and verify**: findings are merged, checked for contradictions between sections, and duplicates are removed. Serious findings are then re-checked by a reviewer that did not report them, and anything that does not hold up is dropped.
-
-## Running without interaction
-
-To run a review from a script:
-
-```bash
-# Claude Code
-claude -p "/deep-doc-review:deep-doc-review docs/design.md" --permission-mode acceptEdits \
-  --allowedTools "Read,Write,Edit,Glob,Grep,Agent,Bash(python3:*),Bash(mkdir:*),Bash(date:*)"
-
-# Codex CLI (needs write access to save the results)
-codex exec --sandbox workspace-write '$deep-doc-review:deep-doc-review docs/design.md'
-```
-
-## Updating
-
-```bash
-# Claude Code
-claude plugin marketplace update deep-doc-review
-claude plugin update deep-doc-review@deep-doc-review
-
-# Codex CLI
-codex plugin marketplace upgrade deep-doc-review
-```
-
-## Uninstalling
-
-```bash
-# Claude Code
-claude plugin uninstall deep-doc-review@deep-doc-review
-claude plugin marketplace remove deep-doc-review
-
-# Codex CLI
-codex plugin remove deep-doc-review@deep-doc-review
-codex plugin marketplace remove deep-doc-review
-```
