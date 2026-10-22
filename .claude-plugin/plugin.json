@@ -1,0 +1,10 @@
+{
+  "name": "deep-review",
+  "displayName": "Deep Review",
+  "version": "1.1.0",
+  "description": "Deep Review for technical documents: segmentation, adaptive budgeting, parallel reviewer subagents, cross-section check and independent re-verification. Produces report.md and findings.json.",
+  "author": { "name": "baneido" },
+  "homepage": "https://github.com/baneido/deep-doc-review",
+  "repository": "https://github.com/baneido/deep-doc-review",
+  "keywords": ["review", "document", "verification", "fact-check", "deep-review"]
+}

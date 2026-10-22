@@ -1,0 +1,19 @@
+{
+  "name": "deep-review",
+  "version": "1.1.0",
+  "description": "Deep Review for technical documents: segmentation, adaptive budgeting, parallel reviewer subagents, cross-section check and independent re-verification.",
+  "author": { "name": "baneido" },
+  "homepage": "https://github.com/baneido/deep-doc-review",
+  "repository": "https://github.com/baneido/deep-doc-review",
+  "keywords": ["review", "document", "verification", "fact-check"],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Deep Review",
+    "shortDescription": "Multi-agent verification of technical documents",
+    "longDescription": "Segments a document, budgets effort per segment, verifies each segment with parallel subagents, then cross-checks, dedupes and independently re-verifies findings into report.md and findings.json.",
+    "developerName": "baneido",
+    "category": "Productivity",
+    "capabilities": ["Read", "Write"],
+    "defaultPrompt": ["Use $deep-review:deep-review to deep-review this document: "]
+  }
+}

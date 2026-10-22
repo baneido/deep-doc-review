@@ -3,7 +3,7 @@ name: deep-review
 description: Deep Review — rigorous multi-agent verification of a technical document (design doc, spec, proposal, paper, contract, report; PDF/Markdown/text). Segments the document, budgets effort per segment, runs parallel reviewer subagents (logic, recomputed numbers, cross-section contradictions, unsupported claims), then synthesizes, de-duplicates and independently re-verifies findings into a report + findings.json. Use when the user asks to deep-review, verify, fact-check, proofread for errors, or find contradictions/calculation mistakes in a document (文書レビュー、ディープレビュー、設計書・仕様書・提案書・論文・契約書の誤り/矛盾/計算ミスのチェック). Not for code review or style editing.
 compatibility: Claude Code (skills + Agent tool subagents) and OpenAI Codex CLI (skills + subagents). Python 3 optional (helper scripts); works without it.
 metadata:
-  version: "1.0.0"
+  version: "1.1.0"
   inspired-by: https://research.google/blog/analyzing-technical-documents-with-deep-review/
 ---
 
@@ -25,7 +25,7 @@ Reference files (read them when the stage needs them, not all up front):
 - `references/prompts.md` — exact subagent prompts for every stage (copy them, fill the placeholders).
 - `references/findings-schema.json` — JSON schema for findings; `references/report-template.md` — final report layout.
 - `references/platform-notes.md` — Claude Code / Codex specifics (how to spawn, concurrency, permissions).
-`SKILL_DIR` below = the directory containing this file (Claude Code: `${CLAUDE_SKILL_DIR}`).
+`SKILL_DIR` below = the directory containing this file (Claude Code: `${CLAUDE_SKILL_DIR}`; in Codex use the directory of this SKILL.md as listed for the skill).
 
 ## Stage 0 — Prepare the workspace (orchestrator)
 
@@ -73,8 +73,8 @@ assumptions, unsatisfiable requirements, undefined terms). Write `RUN/plan.json`
 
 For every job spawn one **fresh reviewer subagent** with the "Stage 3 reviewer" prompt from `references/prompts.md`
 (fill: doc path, segment id/title/range, pass angle, language, output file `RUN/passes/<job>.json`).
-- Claude Code: use the `deep-review-reviewer` agent type if installed, else `general-purpose`. Codex: spawn the
-  `deep_review_reviewer` custom agent if installed, else a default subagent. Details: `references/platform-notes.md`.
+- Claude Code: use the `deep-review:reviewer` agent type (bundled with this plugin), else `general-purpose`.
+  Codex: spawn a default subagent (the prompt already carries the reviewer rules). Details: `references/platform-notes.md`.
 - **Parallelism:** launch independent jobs together (one message with many spawn calls), in waves of ≤ 8
   (Claude Code limit 20 concurrent; Codex respects `agents.max_concurrent_threads_per_session`). Wait for the whole
   wave before the next one. Each reviewer reads the full `doc.numbered.txt` itself — never paste the document into

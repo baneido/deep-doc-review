@@ -1,0 +1,13 @@
+{
+  "name": "deep-doc-review",
+  "description": "Deep Review document-verification plugin (Claude Code / Codex)",
+  "owner": { "name": "baneido" },
+  "plugins": [
+    {
+      "name": "deep-review",
+      "source": "./",
+      "description": "Multi-agent deep review of technical documents (logic, numbers, contradictions, unsupported claims)",
+      "category": "productivity"
+    }
+  ]
+}

@@ -1,8 +1,8 @@
-# deep-doc-review — Deep Review スキル（Claude Code / Codex CLI 対応）
+# deep-doc-review — Deep Review プラグイン（Claude Code / Codex CLI 対応）
 
 [English](README.md) | 日本語
 
-Claude Code と OpenAI Codex CLI に、技術文書（設計書・仕様書・提案書・論文・契約書・報告書など）を **マルチエージェントで深く検証** させるための Agent Skill です。
+Claude Code と OpenAI Codex CLI に、技術文書（設計書・仕様書・提案書・論文・契約書・報告書など）を **マルチエージェントで深く検証** させるためのプラグインです。
 Google Research の [Deep Review](https://research.google/blog/analyzing-technical-documents-with-deep-review/) の考え方（分割 → 適応的な予算配分 → 区間ごとの並列検証 → 全体統合と再検証）を、外部 API を使わずに **エージェント自身のサブエージェントで実行** します。
 
 - 論理の破綻、計算ミス（合計・割合・単位・日付の再計算）、章をまたぐ矛盾、根拠のない主張、曖昧さを検出
@@ -11,95 +11,101 @@ Google Research の [Deep Review](https://research.google/blog/analyzing-technic
 - 出力: `report.md`（既定は日本語）と `findings.json`（機械可読）
 - コードレビューや文体の添削用ではありません
 
-## 構成
-
-```
-.
-├── install.sh                         # Claude Code / Codex へのインストール（冪等）
-├── skills/deep-review/                # スキル本体（両プラットフォーム共通）
-│   ├── SKILL.md                       # オーケストレーション手順（Stage 0–4）
-│   ├── agents/openai.yaml             # Codex 用 UI メタデータ（Claude Code は無視）
-│   ├── references/
-│   │   ├── prompts.md                 # サブエージェント用プロンプト（レビュー/横断チェック/再検証）
-│   │   ├── findings-schema.json       # 指摘 JSON のスキーマ
-│   │   ├── report-template.md         # レポートのひな形
-│   │   └── platform-notes.md          # Claude Code / Codex の違い（起動方法・並列数・権限）
-│   └── scripts/                       # 任意の補助スクリプト（Python 3 標準ライブラリのみ）
-│       ├── prepare_doc.py             # PDF/DOCX/MD → 行番号付きテキスト
-│       ├── check_segments.py          # 分割が全行を網羅しているか確認
-│       ├── merge_findings.py          # 指摘の検証・統合・ID 付与・根本原因グループ適用
-│       └── finalize.py                # 再検証結果の反映と findings.json 出力
-├── agents/
-│   ├── claude/deep-review-reviewer.md # Claude Code 用サブエージェント定義
-│   └── codex/deep_review_reviewer.toml# Codex 用カスタムエージェント定義
-└── tests/                             # 誤りを仕込んだ合成文書と正解キー、採点スクリプト
-```
+このリポジトリはプラグイン本体であり、同時にマーケットプレイスでもあります（マーケットプレイス名 `deep-doc-review`、プラグイン名 `deep-review`）。
 
 ## インストール
 
-### install.sh（推奨）
+> **非公開リポジトリです。** GitHub の `baneido/deep-doc-review` への読み取り権限が必要です。また、手元の git がパスワード入力なしでこのリポジトリを clone できる状態にしておいてください（例: `gh auth login` のあと `gh auth setup-git`、または GitHub に登録済みの SSH 鍵）。どちらの CLI もパスワードを尋ねません。
 
-```bash
-git clone git@github.com:baneido/deep-doc-review.git
-cd deep-doc-review
-./install.sh                # 見つかった方（Claude Code / Codex）に両方インストール
-./install.sh --claude-only  # Claude Code のみ
-./install.sh --codex-only   # Codex のみ
-./install.sh --codex-legacy # 旧 Codex 向けに ~/.codex/skills にもコピー
-./install.sh --uninstall    # 削除
+### Claude Code
+
+Claude Code のセッション内で:
+
+```text
+/plugin marketplace add baneido/deep-doc-review
+/plugin install deep-review@deep-doc-review
+/reload-plugins
 ```
 
-| 対象 | スキル | サブエージェント定義 |
-|---|---|---|
-| Claude Code | `~/.claude/skills/deep-review/` | `~/.claude/agents/deep-review-reviewer.md` |
-| Codex CLI | `~/.agents/skills/deep-review/` | `~/.codex/agents/deep_review_reviewer.toml` |
-
-更新は `git pull && ./install.sh` を再実行するだけです（上書きコピー）。
-
-### 手動コピー
+シェルから実行する場合:
 
 ```bash
-# Claude Code（個人用）
-mkdir -p ~/.claude/skills ~/.claude/agents
-cp -R skills/deep-review ~/.claude/skills/
-cp agents/claude/deep-review-reviewer.md ~/.claude/agents/
-
-# Codex CLI（個人用）
-mkdir -p ~/.agents/skills ~/.codex/agents
-cp -R skills/deep-review ~/.agents/skills/
-cp agents/codex/deep_review_reviewer.toml ~/.codex/agents/
+claude plugin marketplace add baneido/deep-doc-review
+claude plugin install deep-review@deep-doc-review      # 既定はユーザースコープ。--scope project で .claude/settings.json 経由の共有
 ```
 
-プロジェクト単位で共有したい場合は、リポジトリ内の `.claude/skills/deep-review/`（Claude Code）や `.agents/skills/deep-review/`（Codex）に置きます。
-サブエージェント定義は任意です。無い場合、Claude Code は `general-purpose`、Codex は既定のサブエージェントを使います。
+`claude plugin list` または `claude plugin details deep-review@deep-doc-review` で確認できます（スキル `deep-review` とエージェント `reviewer` が表示されます）。
+
+### Codex CLI
+
+```bash
+codex plugin marketplace add baneido/deep-doc-review   # SSH の場合: git@github.com:baneido/deep-doc-review.git
+codex plugin add deep-review@deep-doc-review
+codex plugin list --marketplace deep-doc-review        # 「installed, enabled」と表示されれば完了
+```
+
+TUI の `/plugins` から `deep-doc-review` マーケットプレイスを選び、**deep-review** をインストールすることもできます。インストール後は新しいセッションを開始してください。
+
+## 更新
+
+プラグインにはバージョン（`.claude-plugin/plugin.json` と `.codex-plugin/plugin.json` の `version`）が付いており、新しいバージョンが公開されると更新できます。
+
+```bash
+# Claude Code
+claude plugin marketplace update deep-doc-review
+claude plugin update deep-review@deep-doc-review       # または /plugin → Installed → deep-review → Update now
+
+# Codex CLI
+codex plugin marketplace upgrade deep-doc-review       # マーケットプレイスとインストール済みプラグインを更新
+```
+
+メンテナー向け: リリースのたびに **両方の** マニフェストの `version` を上げてください。上げないと、インストール済みのコピーは更新されません。
+
+## アンインストール
+
+```bash
+# Claude Code
+claude plugin uninstall deep-review@deep-doc-review
+claude plugin marketplace remove deep-doc-review       # 任意: マーケットプレイスの登録も削除
+
+# Codex CLI
+codex plugin remove deep-review@deep-doc-review
+codex plugin marketplace remove deep-doc-review        # 任意
+```
 
 ## 使い方
 
 ### Claude Code
 
+プラグインのスキルには名前空間が付くため、コマンドは `/deep-review:deep-review` です。
+
 ```text
-/deep-review docs/design.pdf
-/deep-review docs/proposal.md lang=en depth=thorough
-/deep-review spec.md focus=第3章〜第5章の数値 web=on
+/deep-review:deep-review docs/design.pdf
+/deep-review:deep-review docs/proposal.md lang=en depth=thorough
+/deep-review:deep-review spec.md focus=第3章〜第5章の数値 web=on
 ```
 
 スラッシュコマンドを使わず「この設計書をディープレビューして: docs/design.md」と頼んでも起動します。
+レビュアーは同梱のサブエージェント `deep-review:reviewer` として動きます。
 非対話で実行する例:
 
 ```bash
-claude -p "/deep-review docs/design.md" --permission-mode acceptEdits \
+claude -p "/deep-review:deep-review docs/design.md" --permission-mode acceptEdits \
   --allowedTools "Read,Write,Edit,Glob,Grep,Agent,Bash(python3:*),Bash(mkdir:*),Bash(date:*)"
 ```
 
 ### Codex CLI
 
+スキルは `deep-review:deep-review` という名前で登録されます。
+
 ```text
-$deep-review docs/design.pdf
-$deep-review docs/proposal.md depth=thorough でレビューして、各区間はサブエージェントで並列に検証して
+$deep-review:deep-review docs/design.pdf
+$deep-review:deep-review docs/proposal.md depth=thorough でレビューして、各区間はサブエージェントで並列に検証して
 ```
 
-`/skills` からも選択できます。非対話の例: `codex exec --sandbox workspace-write '$deep-review docs/design.md'`
+`/skills` から選ぶか、普通に頼んでも起動します。非対話の例: `codex exec --sandbox workspace-write '$deep-review:deep-review docs/design.md'`
 （結果ファイルを書くため workspace-write 以上が必要です）。
+Codex のプラグインはカスタムエージェント定義を配布できないため、Codex では既定のサブエージェントを使います。レビュアー用プロンプトにはレビューのルールがすべて含まれています。
 
 ### オプション（自由記述で指定）
 
@@ -125,19 +131,39 @@ $deep-review docs/proposal.md depth=thorough でレビューして、各区間�
    critical / major の指摘を **書いていないサブエージェントが独立に再検証**（confirmed / rejected / uncertain）→
    （任意）Web による裏取り → `findings.json` と `report.md` を出力。
 
+## リポジトリ構成
+
+```
+.
+├── .claude-plugin/
+│   ├── plugin.json                    # Claude Code 用プラグインマニフェスト（Codex もフォールバックで読む）
+│   └── marketplace.json               # マーケットプレイス "deep-doc-review"（Claude Code・Codex 共通）
+├── .codex-plugin/plugin.json          # Codex 用プラグインマニフェスト（Codex の UI 情報を追加）
+├── .agents/plugins/marketplace.json   # Codex ネイティブのマーケットプレイス定義（インストールポリシー・カテゴリ）
+├── agents/reviewer.md                 # Claude Code 用サブエージェント → deep-review:reviewer
+├── skills/deep-review/                # スキル本体（両プラットフォーム共通）
+│   ├── SKILL.md                       # オーケストレーション手順（Stage 0–4）
+│   ├── agents/openai.yaml             # Codex 用スキル UI メタデータ（Claude Code は無視）
+│   ├── references/                    # プロンプト、指摘スキーマ、レポートひな形、プラットフォーム差分
+│   └── scripts/                       # 任意の補助スクリプト（Python 3 標準ライブラリのみ）
+└── tests/                             # 誤りを仕込んだ合成文書と正解キー、採点スクリプト
+```
+
 ## テスト
 
 `tests/planted_design_doc.md` は誤りを 6 件（＋ボーナス 1 件）仕込んだ合成設計書、`tests/planted_errors.json` が正解キーです。
-正しい計算も含まれており、誤検出しないかも確認できます。
+正しい計算も含まれており、誤検出しないかも確認できます。プラグインをインストールした状態で、このリポジトリの clone から実行します。
 
 ```bash
 cd tests
-claude -p "/deep-review planted_design_doc.md" --permission-mode acceptEdits \
+claude -p "/deep-review:deep-review planted_design_doc.md" --permission-mode acceptEdits \
   --allowedTools "Read,Write,Edit,Glob,Grep,Agent,Bash(python3:*),Bash(mkdir:*),Bash(date:*)"
 python3 score.py .deep-review/planted_design_doc-*/findings.json
 ```
 
+プラグインの開発者は `claude plugin validate .` でマニフェストを検証できます。
+
 ## 補足
 
 - 補助スクリプトは任意です。Python が無い環境でも、エージェントが同じ処理を手作業で行えるよう SKILL.md に記述しています。
-- 外部 API でバッチ実行・モデル混在・コスト計測をしたい場合は、別途スタンドアロンの Python 版ツールを使う運用も可能です（本スキルの既定はエージェントネイティブ実行）。
+- 外部 API でバッチ実行・モデル混在・コスト計測をしたい場合は、別途スタンドアロンの Python 版ツールを使う運用も可能です（本プラグインの既定はエージェントネイティブ実行）。
