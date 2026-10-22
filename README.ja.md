@@ -29,7 +29,7 @@ Claude Code のセッションで次を実行します。
 
 ```text
 /plugin marketplace add baneido/deep-doc-review
-/plugin install deep-review@deep-doc-review
+/plugin install deep-doc-review@deep-doc-review
 /reload-plugins
 ```
 
@@ -41,7 +41,7 @@ Claude Code のセッションで次を実行します。
 
 ```bash
 codex plugin marketplace add baneido/deep-doc-review
-codex plugin add deep-review@deep-doc-review
+codex plugin add deep-doc-review@deep-doc-review
 ```
 
 ## はじめかた
@@ -56,7 +56,7 @@ docs/design.md をディープレビューして
 
 | Claude Code | Codex CLI |
 |---|---|
-| `/deep-review:deep-review docs/design.md` | `$deep-review:deep-review docs/design.md` |
+| `/deep-doc-review:deep-doc-review docs/design.md` | `$deep-doc-review:deep-doc-review docs/design.md` |
 
 対応ファイルは Markdown、テキスト、PDF、Word（`.docx`）です。一般的な設計書で 10〜20 分ほどかかり、長い文書ほど時間がかかります。
 
@@ -64,7 +64,7 @@ docs/design.md をディープレビューして
 
 ## オプション
 
-ファイル名のあとに書き添えます。例: `/deep-review:deep-review spec.pdf lang=en depth=thorough`
+ファイル名のあとに書き添えます。例: `/deep-doc-review:deep-doc-review spec.pdf lang=en depth=thorough`
 
 | オプション | 内容 | 既定 |
 |---|---|---|
@@ -75,7 +75,7 @@ docs/design.md をディープレビューして
 
 ## 出力
 
-作業フォルダに `.deep-review/<文書名>-<日時>/` というフォルダが作られ、結果が保存されます。
+作業フォルダに `.deep-doc-review/<文書名>-<日時>/` というフォルダが作られ、結果が保存されます。
 
 - `report.md`: レビューレポート。最初に指摘の一覧表、続いて各指摘の詳細
 - `findings.json`: 同じ指摘を機械処理しやすい形式で保存したもの
@@ -94,11 +94,11 @@ docs/design.md をディープレビューして
 
 ```bash
 # Claude Code
-claude -p "/deep-review:deep-review docs/design.md" --permission-mode acceptEdits \
+claude -p "/deep-doc-review:deep-doc-review docs/design.md" --permission-mode acceptEdits \
   --allowedTools "Read,Write,Edit,Glob,Grep,Agent,Bash(python3:*),Bash(mkdir:*),Bash(date:*)"
 
 # Codex CLI（結果を保存するため書き込み権限が必要です）
-codex exec --sandbox workspace-write '$deep-review:deep-review docs/design.md'
+codex exec --sandbox workspace-write '$deep-doc-review:deep-doc-review docs/design.md'
 ```
 
 ## 更新
@@ -106,7 +106,7 @@ codex exec --sandbox workspace-write '$deep-review:deep-review docs/design.md'
 ```bash
 # Claude Code
 claude plugin marketplace update deep-doc-review
-claude plugin update deep-review@deep-doc-review
+claude plugin update deep-doc-review@deep-doc-review
 
 # Codex CLI
 codex plugin marketplace upgrade deep-doc-review
@@ -116,10 +116,10 @@ codex plugin marketplace upgrade deep-doc-review
 
 ```bash
 # Claude Code
-claude plugin uninstall deep-review@deep-doc-review
+claude plugin uninstall deep-doc-review@deep-doc-review
 claude plugin marketplace remove deep-doc-review
 
 # Codex CLI
-codex plugin remove deep-review@deep-doc-review
+codex plugin remove deep-doc-review@deep-doc-review
 codex plugin marketplace remove deep-doc-review
 ```

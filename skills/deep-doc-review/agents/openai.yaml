@@ -1,6 +1,6 @@
 interface:
   display_name: "Deep Review"
   short_description: "Multi-agent verification of technical documents (logic, numbers, contradictions)"
-  default_prompt: "Use $deep-review:deep-review to deep-review this document and write the report in Japanese: "
+  default_prompt: "Use $deep-doc-review:deep-doc-review to review this document and write the report in Japanese: "
 policy:
   allow_implicit_invocation: true

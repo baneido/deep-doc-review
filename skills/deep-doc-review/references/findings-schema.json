@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "deep-review/findings-schema.json",
+  "$id": "deep-doc-review/findings-schema.json",
   "title": "Deep Review pass output (RUN/passes/<job>.json)",
   "type": "object",
   "required": ["findings"],

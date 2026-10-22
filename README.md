@@ -29,7 +29,7 @@ Run these in a Claude Code session:
 
 ```text
 /plugin marketplace add baneido/deep-doc-review
-/plugin install deep-review@deep-doc-review
+/plugin install deep-doc-review@deep-doc-review
 /reload-plugins
 ```
 
@@ -41,7 +41,7 @@ Run these in your terminal, then start a new Codex session:
 
 ```bash
 codex plugin marketplace add baneido/deep-doc-review
-codex plugin add deep-review@deep-doc-review
+codex plugin add deep-doc-review@deep-doc-review
 ```
 
 ## Quick start
@@ -56,7 +56,7 @@ Or use the command directly:
 
 | Claude Code | Codex CLI |
 |---|---|
-| `/deep-review:deep-review docs/design.md` | `$deep-review:deep-review docs/design.md` |
+| `/deep-doc-review:deep-doc-review docs/design.md` | `$deep-doc-review:deep-doc-review docs/design.md` |
 
 Supported files are Markdown, plain text, PDF and Word (`.docx`). A typical design document takes about 10 to 20 minutes; longer documents take longer.
 
@@ -64,7 +64,7 @@ When it finishes, open the report it tells you about. Your original document is 
 
 ## Options
 
-Add options after the file name in plain words, for example `/deep-review:deep-review spec.pdf lang=en depth=thorough`.
+Add options after the file name in plain words, for example `/deep-doc-review:deep-doc-review spec.pdf lang=en depth=thorough`.
 
 | Option | What it does | Default |
 |---|---|---|
@@ -77,7 +77,7 @@ Note that the report is written in Japanese unless you add `lang=en` or `lang=au
 
 ## Output
 
-Results are saved in a new folder in your working directory, `.deep-review/<document name>-<date and time>/`:
+Results are saved in a new folder in your working directory, `.deep-doc-review/<document name>-<date and time>/`:
 
 - `report.md`: the review report, with a summary table followed by each finding in detail
 - `findings.json`: the same findings in a machine-readable format
@@ -96,11 +96,11 @@ To run a review from a script:
 
 ```bash
 # Claude Code
-claude -p "/deep-review:deep-review docs/design.md" --permission-mode acceptEdits \
+claude -p "/deep-doc-review:deep-doc-review docs/design.md" --permission-mode acceptEdits \
   --allowedTools "Read,Write,Edit,Glob,Grep,Agent,Bash(python3:*),Bash(mkdir:*),Bash(date:*)"
 
 # Codex CLI (needs write access to save the results)
-codex exec --sandbox workspace-write '$deep-review:deep-review docs/design.md'
+codex exec --sandbox workspace-write '$deep-doc-review:deep-doc-review docs/design.md'
 ```
 
 ## Updating
@@ -108,7 +108,7 @@ codex exec --sandbox workspace-write '$deep-review:deep-review docs/design.md'
 ```bash
 # Claude Code
 claude plugin marketplace update deep-doc-review
-claude plugin update deep-review@deep-doc-review
+claude plugin update deep-doc-review@deep-doc-review
 
 # Codex CLI
 codex plugin marketplace upgrade deep-doc-review
@@ -118,10 +118,10 @@ codex plugin marketplace upgrade deep-doc-review
 
 ```bash
 # Claude Code
-claude plugin uninstall deep-review@deep-doc-review
+claude plugin uninstall deep-doc-review@deep-doc-review
 claude plugin marketplace remove deep-doc-review
 
 # Codex CLI
-codex plugin remove deep-review@deep-doc-review
+codex plugin remove deep-doc-review@deep-doc-review
 codex plugin marketplace remove deep-doc-review
 ```

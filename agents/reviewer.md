@@ -1,6 +1,6 @@
 ---
 name: reviewer
-description: Deep Review worker. Verifies one segment (or a batch of findings) of a line-numbered technical document with full-document context and writes strict JSON findings/verdicts to the output file it is given. Used by the deep-review skill; not for general tasks.
+description: Deep Review worker. Verifies one segment (or a batch of findings) of a line-numbered technical document with full-document context and writes strict JSON findings/verdicts to the output file it is given. Used by the deep-doc-review skill; not for general tasks.
 tools: Read, Grep, Glob, Write, Bash
 effort: high
 ---
