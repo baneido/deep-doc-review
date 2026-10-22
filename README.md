@@ -1,23 +1,32 @@
-# deep-doc-review — Deep Review plugin for Claude Code and Codex CLI
+# deep-doc-review
 
 English | [日本語](README.ja.md)
 
-A plugin that makes **Claude Code** and **OpenAI Codex CLI** run a **deep, multi-agent review** of technical documents (design docs, specs, proposals, papers, contracts, reports, and more).
-It follows the approach of Google Research's [Deep Review](https://research.google/blog/analyzing-technical-documents-with-deep-review/) (segmentation → adaptive budgeting → parallel per-segment verification → global synthesis and re-verification).
+**deep-doc-review** is a plugin for [Claude Code](https://docs.claude.com/en/docs/claude-code) and [OpenAI Codex CLI](https://github.com/openai/codex) that carefully checks a technical document for mistakes. Point it at a design doc, specification, proposal, paper, contract or report, and you get back a report listing problems it found, each with the exact location, the reason and a suggested fix.
 
-- Detects broken logic, calculation errors (re-computing totals, percentages, units and dates), contradictions across sections, unsupported claims and ambiguity
-- Every finding comes with line numbers (`L0042`), a quote, evidence (a recalculation or the conflicting passage) and a suggested fix
-- Critical findings are **independently re-verified by a separate subagent**, which can reject false positives
-- Output: `report.md` (Japanese by default) and `findings.json` (machine-readable)
-- Not intended for code review or copy editing
+It is based on the approach described in Google Research's [Deep Review](https://research.google/blog/analyzing-technical-documents-with-deep-review/): instead of reading the document once, it splits it into sections, has several reviewers examine each section in depth at the same time, and then cross-checks and re-verifies what they found.
+
+## What it finds
+
+- Calculation errors: totals, percentages, units and dates are recomputed, not just read
+- Contradictions between different parts of the document
+- Broken logic and claims without support
+- Ambiguous wording that could be read in more than one way
+
+Every finding shows the line numbers, a quote of the passage, the evidence (for example the recalculation or the conflicting passage) and a suggested fix. Serious findings are double-checked by a separate reviewer, which removes false alarms.
+
+It is not meant for code review or for polishing style and grammar.
+
+## Requirements
+
+- Claude Code or Codex CLI, installed and signed in
+- Python 3 is recommended (used to read PDF and Word files); without it, the agent falls back to other ways of reading the file
 
 ## Installation
 
-> **Private repository:** you need read access to `baneido/deep-doc-review` on GitHub, and git on your machine must already be able to clone it without a prompt (for example `gh auth login` followed by `gh auth setup-git`, or an SSH key registered with GitHub). Neither CLI asks for a password.
-
 ### Claude Code
 
-In a Claude Code session:
+Run these in a Claude Code session:
 
 ```text
 /plugin marketplace add baneido/deep-doc-review
@@ -25,100 +34,95 @@ In a Claude Code session:
 /reload-plugins
 ```
 
-Or from your shell:
-
-```bash
-claude plugin marketplace add baneido/deep-doc-review
-claude plugin install deep-review@deep-doc-review      # user scope; add --scope project to share via .claude/settings.json
-```
-
-Check it with `claude plugin list` or `claude plugin details deep-review@deep-doc-review`.
+The first line registers this repository as a plugin source, the second installs the plugin, and the third loads it into the current session.
 
 ### Codex CLI
 
+Run these in your terminal, then start a new Codex session:
+
 ```bash
-codex plugin marketplace add baneido/deep-doc-review   # or: git@github.com:baneido/deep-doc-review.git
+codex plugin marketplace add baneido/deep-doc-review
 codex plugin add deep-review@deep-doc-review
-codex plugin list --marketplace deep-doc-review        # should show "installed, enabled"
 ```
 
-In the TUI you can also open `/plugins`, choose the `deep-doc-review` marketplace and install **deep-review** there. Start a new session after installing.
+## Quick start
 
-## Update
+Open Claude Code or Codex in the folder that contains your document and ask for a review:
+
+```text
+Deep-review docs/design.md
+```
+
+Or use the command directly:
+
+| Claude Code | Codex CLI |
+|---|---|
+| `/deep-review:deep-review docs/design.md` | `$deep-review:deep-review docs/design.md` |
+
+Supported files are Markdown, plain text, PDF and Word (`.docx`). A typical design document takes about 10 to 20 minutes; longer documents take longer.
+
+When it finishes, open the report it tells you about. Your original document is never changed.
+
+## Options
+
+Add options after the file name in plain words, for example `/deep-review:deep-review spec.pdf lang=en depth=thorough`.
+
+| Option | What it does | Default |
+|---|---|---|
+| `lang` | Language of the report: `ja` (Japanese), `en` (English) or `auto` (same as the document) | `ja` |
+| `depth` | How thorough the review is: `quick`, `standard` or `thorough`. Deeper reviews take longer | `standard` |
+| `focus` | Parts or aspects to concentrate on, for example `focus="numbers in chapters 3-5"` | none |
+| `web` | `on` checks facts such as standards, prices and laws with a web search. Only short search phrases are sent, never your document | off |
+
+Note that the report is written in Japanese unless you add `lang=en` or `lang=auto`.
+
+## Output
+
+Results are saved in a new folder in your working directory, `.deep-review/<document name>-<date and time>/`:
+
+- `report.md`: the review report, with a summary table followed by each finding in detail
+- `findings.json`: the same findings in a machine-readable format
+
+## How it works
+
+1. **Prepare**: the document is converted to text and every line gets a number, so each finding can point to exact lines.
+2. **Split**: the document is divided into 4 to 12 sections by topic.
+3. **Plan**: each section is rated by how difficult and important it is. Harder sections get more reviewers, each looking from a different angle: a general review, a recheck of every number, and a skeptical expert.
+4. **Review**: the reviewers work in parallel. Each one reads the whole document but concentrates on its own section.
+5. **Combine and verify**: findings are merged, checked for contradictions between sections, and duplicates are removed. Serious findings are then re-checked by a reviewer that did not report them, and anything that does not hold up is dropped.
+
+## Running without interaction
+
+To run a review from a script:
+
+```bash
+# Claude Code
+claude -p "/deep-review:deep-review docs/design.md" --permission-mode acceptEdits \
+  --allowedTools "Read,Write,Edit,Glob,Grep,Agent,Bash(python3:*),Bash(mkdir:*),Bash(date:*)"
+
+# Codex CLI (needs write access to save the results)
+codex exec --sandbox workspace-write '$deep-review:deep-review docs/design.md'
+```
+
+## Updating
 
 ```bash
 # Claude Code
 claude plugin marketplace update deep-doc-review
-claude plugin update deep-review@deep-doc-review       # or /plugin → Installed → deep-review → Update now
+claude plugin update deep-review@deep-doc-review
 
 # Codex CLI
-codex plugin marketplace upgrade deep-doc-review       # refreshes the marketplace and the installed plugin
+codex plugin marketplace upgrade deep-doc-review
 ```
 
-## Uninstall
+## Uninstalling
 
 ```bash
 # Claude Code
 claude plugin uninstall deep-review@deep-doc-review
-claude plugin marketplace remove deep-doc-review       # optional: also forget the marketplace
+claude plugin marketplace remove deep-doc-review
 
 # Codex CLI
 codex plugin remove deep-review@deep-doc-review
-codex plugin marketplace remove deep-doc-review        # optional
+codex plugin marketplace remove deep-doc-review
 ```
-
-## Usage
-
-### Claude Code
-
-Plugin skills are namespaced, so the command is `/deep-review:deep-review`:
-
-```text
-/deep-review:deep-review docs/design.pdf
-/deep-review:deep-review docs/proposal.md lang=en depth=thorough
-/deep-review:deep-review spec.md focus="numbers in chapters 3-5" web=on
-```
-
-You can also skip the slash command and just ask, e.g. "Deep-review this design doc: docs/design.md".
-Non-interactive example:
-
-```bash
-claude -p "/deep-review:deep-review docs/design.md" --permission-mode acceptEdits \
-  --allowedTools "Read,Write,Edit,Glob,Grep,Agent,Bash(python3:*),Bash(mkdir:*),Bash(date:*)"
-```
-
-### Codex CLI
-
-The skill is listed as `deep-review:deep-review`:
-
-```text
-$deep-review:deep-review docs/design.pdf
-$deep-review:deep-review docs/proposal.md depth=thorough — verify each segment in parallel with subagents
-```
-
-You can also pick it from `/skills` or just ask. Non-interactive example: `codex exec --sandbox workspace-write '$deep-review:deep-review docs/design.md'`
-(workspace-write or higher is required because the skill writes result files).
-
-### Options (free-form)
-
-| Option | Values | Default |
-|---|---|---|
-| `lang` | `ja` / `en` / `auto` (language of the document) | `ja` |
-| `depth` | `quick` / `standard` / `thorough` | `standard` |
-| `focus` | Scope or angle to emphasize (e.g. "numbers only", "chapters 3-5") | none |
-| `web` | `on` to fact-check against external sources (sends only short search queries, never the document text) | off |
-
-Results are written to `.deep-review/<doc>-<timestamp>/` in the working directory (`report.md`, `findings.json` and intermediate files). The original document is never modified.
-
-## How it works
-
-1. **Preparation (Stage 0)**: Convert the document to text and create a line-numbered copy in `L0001| …` format. Very long documents get a narrower scope.
-2. **Segmentation (Stage 1)**: Split into 4–12 meaningful segments (tables stay with the text that interprets them) and check that every line is covered.
-3. **Adaptive budgeting (Stage 2)**: Rate each segment's difficulty 1–5, which sets the number of passes (1–3) and reasoning depth.
-   Pass angles: A = general review, B = recompute every number and cross-check it against other passages, C = skeptical domain expert.
-4. **Deep parallel verification (Stage 3)**: Launch a fresh subagent for each segment × pass (waves of up to 8 in parallel).
-   Each reviewer **reads the whole document but focuses on its segment**, and writes findings to a file as strict JSON.
-   Where subagents are unavailable, the same steps run one after another.
-5. **Global synthesis (Stage 4)**: Merge findings → cross-section consistency check (dedicated subagent) → dedupe by root cause →
-   **independent re-verification** of critical/major findings by a subagent that did not write them (confirmed / rejected / uncertain) →
-   (optional) web fact-checking → write `findings.json` and `report.md`.
