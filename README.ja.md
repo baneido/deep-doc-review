@@ -19,8 +19,7 @@ Google Research の [Deep Review](https://research.google/blog/analyzing-technic
 
 ## 必要なもの
 
-- Claude Code または Codex CLI（インストールしてサインイン済みのもの）
-- Python 3（推奨。PDF や Word ファイルの読み込みに使います。無い場合は別の方法で読み込みます）
+Claude Code または Codex CLI を、インストールしてサインインした状態で使います。
 
 ## インストール
 

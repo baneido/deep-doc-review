@@ -19,8 +19,7 @@ It is not meant for code review or for polishing style and grammar.
 
 ## Requirements
 
-- Claude Code or Codex CLI, installed and signed in
-- Python 3 is recommended (used to read PDF and Word files); without it, the agent falls back to other ways of reading the file
+You need Claude Code or Codex CLI, installed and signed in.
 
 ## Installation
 
