@@ -33,8 +33,6 @@ Claude Code のセッションで次を実行します。
 /reload-plugins
 ```
 
-1 行目でこのリポジトリをプラグインの入手元として登録し、2 行目でプラグインをインストール、3 行目で今のセッションに読み込みます。
-
 ### Codex CLI
 
 ターミナルで次を実行し、Codex のセッションを新しく開きます。
@@ -44,7 +42,7 @@ codex plugin marketplace add baneido/deep-doc-review
 codex plugin add deep-doc-review@deep-doc-review
 ```
 
-## はじめかた
+## 使い方
 
 文書があるフォルダで Claude Code か Codex を開き、レビューを頼みます。
 
@@ -57,10 +55,6 @@ docs/design.md をディープレビューして
 | Claude Code | Codex CLI |
 |---|---|
 | `/deep-doc-review:deep-doc-review docs/design.md` | `$deep-doc-review:deep-doc-review docs/design.md` |
-
-対応ファイルは Markdown、テキスト、PDF、Word（`.docx`）です。一般的な設計書で 10〜20 分ほどかかり、長い文書ほど時間がかかります。
-
-終わると、レポートの場所が表示されます。元の文書は変更されません。
 
 ## オプション
 
@@ -87,39 +81,3 @@ docs/design.md をディープレビューして
 3. **計画**: 区間ごとに難しさと重要度を見積もります。難しい区間ほど多くのレビュアーを割り当て、それぞれ違う観点（全体的なレビュー、全数値の再計算、懐疑的な専門家の目）から調べます。
 4. **レビュー**: レビュアーが並行して作業します。各レビュアーは文書全体を読んだうえで、担当区間に集中します。
 5. **統合と再確認**: 指摘をまとめ、区間をまたぐ矛盾を確認し、重複を取り除きます。重要な指摘は、それを出していない別のレビュアーが確かめ直し、成り立たないものは外します。
-
-## 対話なしで実行する
-
-スクリプトから実行する場合の例です。
-
-```bash
-# Claude Code
-claude -p "/deep-doc-review:deep-doc-review docs/design.md" --permission-mode acceptEdits \
-  --allowedTools "Read,Write,Edit,Glob,Grep,Agent,Bash(python3:*),Bash(mkdir:*),Bash(date:*)"
-
-# Codex CLI（結果を保存するため書き込み権限が必要です）
-codex exec --sandbox workspace-write '$deep-doc-review:deep-doc-review docs/design.md'
-```
-
-## 更新
-
-```bash
-# Claude Code
-claude plugin marketplace update deep-doc-review
-claude plugin update deep-doc-review@deep-doc-review
-
-# Codex CLI
-codex plugin marketplace upgrade deep-doc-review
-```
-
-## アンインストール
-
-```bash
-# Claude Code
-claude plugin uninstall deep-doc-review@deep-doc-review
-claude plugin marketplace remove deep-doc-review
-
-# Codex CLI
-codex plugin remove deep-doc-review@deep-doc-review
-codex plugin marketplace remove deep-doc-review
-```
