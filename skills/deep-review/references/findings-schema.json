@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "deep-review/findings-schema.json",
+  "title": "Deep Review pass output (RUN/passes/<job>.json)",
+  "type": "object",
+  "required": ["findings"],
+  "properties": {
+    "job": {"type": "string", "description": "e.g. S3_pB or GLOBAL_cross"},
+    "segment": {"type": "string"},
+    "pass": {"type": "string", "enum": ["A", "B", "C", "X"]},
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["severity", "category", "line_start", "line_end", "issue", "evidence", "confidence"],
+        "properties": {
+          "severity": {"enum": ["critical", "major", "minor", "info"]},
+          "category": {"enum": ["arithmetic", "numeric_inconsistency", "contradiction", "unsupported_claim",
+                                "logic", "cross_reference", "ambiguity", "other"]},
+          "line_start": {"type": "integer", "minimum": 1},
+          "line_end": {"type": "integer", "minimum": 1},
+          "quote": {"type": "string", "maxLength": 200},
+          "issue": {"type": "string", "minLength": 1},
+          "evidence": {"type": "string"},
+          "suggestion": {"type": "string"},
+          "confidence": {"type": "number", "minimum": 0, "maximum": 1}
+        }
+      }
+    }
+  },
+  "$defs": {
+    "final_finding": {
+      "description": "Shape of each item in RUN/findings.json (after merge/verify). Compatible with the deep_review.py tool.",
+      "allOf": [{"$ref": "#/properties/findings/items"}],
+      "properties": {
+        "id": {"type": "string", "pattern": "^F[0-9]+$"},
+        "segments": {"type": "array", "items": {"type": "string"}},
+        "passes": {"type": "array", "items": {"type": "string"}},
+        "support": {"type": "integer"},
+        "source": {"enum": ["segment_review", "cross_check"]},
+        "related_lines": {"type": "array", "items": {"type": "string"}},
+        "alt_descriptions": {"type": "array", "items": {"type": "string"}},
+        "verdict": {"enum": ["confirmed", "rejected", "uncertain", "unverified"]},
+        "verify_note": {"type": "string"},
+        "original_severity": {"type": "string"},
+        "grounding": {"type": "array", "items": {"type": "object"}}
+      }
+    },
+    "final_file": {
+      "description": "RUN/findings.json",
+      "type": "object",
+      "required": ["summary", "findings", "segments", "stats"],
+      "properties": {
+        "summary": {"type": "object", "properties": {
+          "overall_assessment": {"type": "string"}, "top_priorities": {"type": "array"},
+          "strengths": {"type": "array"}, "verdict": {"enum": ["accept", "minor_revision", "major_revision", "reject", "n/a"]}}},
+        "findings": {"type": "array", "items": {"$ref": "#/$defs/final_finding"}},
+        "segments": {"type": "array"},
+        "stats": {"type": "object"}
+      }
+    }
+  }
+}
