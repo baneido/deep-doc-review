@@ -3,7 +3,7 @@
 [English](README.md) | 日本語
 
 Claude Code と OpenAI Codex CLI に、技術文書（設計書・仕様書・提案書・論文・契約書・報告書など）を **マルチエージェントで深く検証** させるためのプラグインです。
-Google Research の [Deep Review](https://research.google/blog/analyzing-technical-documents-with-deep-review/) の考え方（分割 → 適応的な予算配分 → 区間ごとの並列検証 → 全体統合と再検証）を、外部 API を使わずに **エージェント自身のサブエージェントで実行** します。
+Google Research の [Deep Review](https://research.google/blog/analyzing-technical-documents-with-deep-review/) の考え方（分割 → 適応的な予算配分 → 区間ごとの並列検証 → 全体統合と再検証）にもとづいています。
 
 - 論理の破綻、計算ミス（合計・割合・単位・日付の再計算）、章をまたぐ矛盾、根拠のない主張、曖昧さを検出
 - すべての指摘に行番号（`L0042`）・引用・根拠（再計算や矛盾箇所）・修正案を付与
@@ -118,7 +118,7 @@ $deep-review:deep-review docs/proposal.md depth=thorough でレビューして�
    パスの観点は A=総合レビュー、B=全数値の再計算と他箇所との照合、C=懐疑的な専門家による反論。
 4. **並列の深い検証（Stage 3）**: 「区間 × パス」ごとに新しいサブエージェントを起動（最大 8 並列のウェーブ）。
    各レビュアーは **文書全体を読んだうえで担当区間に集中** し、厳密な JSON で指摘をファイルに書き出す。
-   サブエージェントが使えない環境では、オーケストレーターが同じ手順を逐次実行する。
+   サブエージェントが使えない環境では、同じ手順を順番に実行する。
 5. **全体統合（Stage 4）**: 指摘の統合 → 章をまたぐ矛盾の横断チェック（専用サブエージェント）→ 根本原因ごとの重複排除 →
    critical / major の指摘を **書いていないサブエージェントが独立に再検証**（confirmed / rejected / uncertain）→
    （任意）Web による裏取り → `findings.json` と `report.md` を出力。

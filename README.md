@@ -3,7 +3,7 @@
 English | [日本語](README.ja.md)
 
 A plugin that makes **Claude Code** and **OpenAI Codex CLI** run a **deep, multi-agent review** of technical documents (design docs, specs, proposals, papers, contracts, reports, and more).
-It follows the approach of Google Research's [Deep Review](https://research.google/blog/analyzing-technical-documents-with-deep-review/) (segmentation → adaptive budgeting → parallel per-segment verification → global synthesis and re-verification), executed **with the agent's own subagents**, without any external API.
+It follows the approach of Google Research's [Deep Review](https://research.google/blog/analyzing-technical-documents-with-deep-review/) (segmentation → adaptive budgeting → parallel per-segment verification → global synthesis and re-verification).
 
 - Detects broken logic, calculation errors (re-computing totals, percentages, units and dates), contradictions across sections, unsupported claims and ambiguity
 - Every finding comes with line numbers (`L0042`), a quote, evidence (a recalculation or the conflicting passage) and a suggested fix
@@ -118,7 +118,7 @@ Results are written to `.deep-review/<doc>-<timestamp>/` in the working director
    Pass angles: A = general review, B = recompute every number and cross-check it against other passages, C = skeptical domain expert.
 4. **Deep parallel verification (Stage 3)**: Launch a fresh subagent for each segment × pass (waves of up to 8 in parallel).
    Each reviewer **reads the whole document but focuses on its segment**, and writes findings to a file as strict JSON.
-   Where subagents are unavailable, the orchestrator runs the same steps sequentially.
+   Where subagents are unavailable, the same steps run one after another.
 5. **Global synthesis (Stage 4)**: Merge findings → cross-section consistency check (dedicated subagent) → dedupe by root cause →
    **independent re-verification** of critical/major findings by a subagent that did not write them (confirmed / rejected / uncertain) →
    (optional) web fact-checking → write `findings.json` and `report.md`.
